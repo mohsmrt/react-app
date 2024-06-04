@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import CardProduct from "../components/fragments/CardProduct";
 import Button from "../components/elements/Button";
+import Counter from "../components/fragments/Counter";
 
 const products = [
 	{
@@ -30,13 +31,25 @@ const email = localStorage.getItem('email');
 
 const ProductPage = () => {
 
-	const [cart, setCart] = useState([
+	const [cart, setCart] = useState([]);
+	const [totalPrice, setTotalPrice] = useState(0);
 
-		{
-			id: 1,
-			qty: 1,
+	// useEffect //
+
+	useEffect(() => {
+		setCart(JSON.parse(localStorage.getItem('cart')) || []);
+	}, []);
+
+	useEffect(() => {
+		if (cart.length > 0) {
+			const sum = cart.reduce((acc, item) => {
+				const product = products.find((product) => product.id === item.id);
+				return acc + product.price * item.qty;
+			}, 0);
+			setTotalPrice(sum);
+			localStorage.setItem('cart', JSON.stringify(cart));
 		}
-	]);
+	}, [cart]);
 
 	const handleLogout = () => {
 		localStorage.removeItem('email');
@@ -55,6 +68,25 @@ const ProductPage = () => {
 			setCart([...cart, { id, qty: 1 }]);
 		}
 	};
+
+	// useRef //
+
+	const cartRef = useRef(JSON.parse(localStorage.getItem('cart')) || []);
+
+	const handleAddToCartRef = (id) => {
+		cartRef.current = [...cartRef.current, { id, qty: 1 }];
+		localStorage.setItem('cart', JSON.stringify(cartRef.current));
+	};
+
+	const totalPriceRef = useRef(null);
+
+	useEffect(() => {
+		if (cart.length > 0) {
+			totalPriceRef.current.style.display = 'table-row';
+		} else {
+			totalPriceRef.current.style.display = 'none';
+		}
+	}, [cart]);
 
 	return (
 		<>
@@ -101,10 +133,21 @@ const ProductPage = () => {
 									</tr>
 								)
 							})}
+							<tr ref={totalPriceRef}>
+								<td colSpan={3}>
+									<b>Total price</b>
+								</td>
+								<td>
+									<b>${" "}{totalPrice}</b>
+								</td>
+							</tr>
 						</tbody>
 					</table>
 				</div>
 			</div>
+			{/* <div className="mt-5 flex justify-center mb-5">
+				<Counter></Counter>
+			</div> */}
 		</>
 	);
 };
